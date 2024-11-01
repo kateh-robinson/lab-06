@@ -29,8 +29,51 @@ diamonds <- diamonds %>% rename(
 ```{r}
 # Do some preliminary investigations & cleaning
 
+diamonds %>%
+  count(color)
 
+diamonds %>%
+  count(cut)
 
+diamonds %>%
+  count(clarity)
+
+diamonds %>%
+  ggplot(aes(carat)) +
+  geom_histogram(bins = 100)
+
+diamonds <- diamonds %>%
+  filter(carat <= 3)
+
+diamonds %>%
+  ggplot(aes(price)) +
+  geom_histogram(bins = 100)
+
+diamonds %>%
+  ggplot(aes(length_mm)) +
+  geom_histogram(bins = 100)
+
+diamonds <- diamonds %>%
+  filter(length_mm >= 2.5)
+
+diamonds %>%
+  ggplot(aes(width_mm)) +
+  geom_histogram(bins = 100)
+
+diamonds <- diamonds %>%
+  filter(width_mm <= 20)
+
+diamonds %>%
+  ggplot(aes(depth_mm)) +
+  geom_histogram(bins = 100)
+
+diamonds <- diamonds %>%
+  filter(depth_mm <= 10)
+
+diamonds <- diamonds %>%
+  filter(length_mm != 0 & depth_mm != 0 & width_mm != 0)
+
+diamonds
 
 ```
 
@@ -45,24 +88,42 @@ diamonds <- diamonds %>%
 # Overall table_mm arithmetic mean?
 
 
-
+diamonds %>%
+  summarise(
+    table_mm_mean = mean(table_mm)
+  )
 
 
 
 # table_mm arithmetic mean within each clarity category
 
 
-
+diamonds %>%
+  group_by(clarity) %>%
+  summarise(
+    table_mm_mean = mean(table_mm)
+  )
 
 
 
 ```
 
-_Add your comment here_
+_As clarity improves, the table percentage mean decreases._
 
 ```{r}
 # calculate the arithmetic mean across all numeric variables
 
+diamonds %>%
+  summarise(
+    avg_carat = mean(carat),
+    avg_depth_pct = mean(depth_pct),
+    avg_table_pct = mean(table_pct),
+    avg_price = mean(price),
+    avg_length_mm = mean(length_mm),
+    avg_width_mm = mean(width_mm),
+    avg_depth_mm = mean(depth_mm),
+    avg_table_mm = mean(table_mm)
+  )
 
 
 
@@ -73,7 +134,13 @@ _Add your comment here_
 ```{r}
 # Write gmean() command
 
-
+gmean <- function(x){
+  logsum <- 0
+  for(i in x){
+    logsum <- logsum + log(i)
+  }
+  exp(1/length(x)*logsum)
+}
 
 ```
 
@@ -92,7 +159,11 @@ test_data <- list(
 
 
 # Create for loop to test gmean() on the above examples
+for(item in test_data){
+  print(gmean(item))
+}
 
+# doesn't work for test5 as non-numeric values, doesn't work for test6 as character values so all taken as 1
 
 ```
 
@@ -103,12 +174,30 @@ test_data <- list(
 # Copy gmean() from Ex 3 and edit it to check the input
 
 
+gmean <- function(x){
+  if(any(x <= 0)){
+      warning("Geometric mean for positive values only")
+      return(NaN)
+  } else if(any(!is.numeric(x))){
+      warning("Geometric mean for numeric values only")
+      return(NaN)
+    }
+
+  logsum <- 0
+  for(i in x){
+    logsum <- logsum + log(i)
+  }
+  exp(1/length(x)*logsum)
+}
 
 
 
 # Copy your code from Ex 4 to test your new command
 
 
+for(item in test_data){
+  print(gmean(item))
+}
 
 
 
@@ -118,6 +207,7 @@ test_data <- list(
 
 ```{r}
 # replicate the for loop from Ex 4 using the map (or a similar) function
+map_dfr(test_data, gmean) # could also use map or do with rows instead of columns, etc.
 
 ```
 
@@ -127,21 +217,32 @@ test_data <- list(
 ```{r}
 # Overall table_mm arithmetic mean, median, and geometric mean?
 
-
+diamonds %>%
+  summarise(
+    table_mm_mean = mean(table_mm),
+    table_mm_median = median(table_mm),
+    table_mm_geommean = gmean(table_mm)
+  )
 
 
 
 
 # Arithmetic mean, median, and geometric mean of table_mm within each clarity category
 
-
+diamonds %>%
+  group_by(clarity) %>%
+  summarise(
+    table_mm_mean = mean(table_mm),
+    table_mm_median = median(table_mm),
+    table_mm_geommean = gmean(table_mm)
+  )
 
 
 
 
 ```
 
-_Add your comment here_
+_As before we see the table_mm decreases with increasing clarity - this is the case with all types of mean._
 
 
 ## Exercise 8 (optional)
@@ -149,11 +250,31 @@ _Add your comment here_
 ```{r}
 # Create gmean2() that computes the geometric mean 
 #   that uses the original definition
+library(pracma)
 
+gmean2 <- function(x){
+  if(any(x <= 0)){
+      warning("Geometric mean for positive values only")
+      return(NaN)
+  } else if(any(!is.numeric(x))){
+      warning("Geometric mean for numeric values only")
+      return(NaN)
+    }
+  mult <- 1
+  for(val in x){
+    mult <- mult * val
+  }
+  nthroot(mult, length(x))
+}
 
+map_dfr(test_data, gmean2)
+#fine here
 
-
-
+diamonds %>%
+  summarise(
+    table_mm_geommean = gmean2(table_mm)
+  )
+#so many values it doesn't work
 
 ```
 
@@ -164,9 +285,28 @@ _Add your comment here_
 # Create a function that computes the harmonic mean
 
 
+hmean <- function(x){
+  if(any(x <= 0)){
+      warning("Harmonic mean for positive values only")
+      return(NaN)
+  } else if(any(!is.numeric(x))){
+      warning("Harmonic mean for numeric values only")
+      return(NaN)
+  }
+  recipx <- c()
+  for(i in x){
+    recipx <- c(recipx, 1/i)
+  }
+  recipmean <- mean(recipx)
+  1/recipmean
+}
 
+map_dfr(test_data, hmean)
 
-
+diamonds %>%
+  summarise(
+    table_mm_harmmean = hmean(table_mm)
+  )
 
 
 ```
